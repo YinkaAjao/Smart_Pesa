@@ -51,7 +51,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyB-pwf8EjHYDZpt5_XiNZfihXs9DHswHQs',
-    appId: '1:572588099361:android:6ef19e6d0308c75139a060',
+    appId: '1:572588099361:android:569b2c6a4753efc839a060',
     messagingSenderId: '572588099361',
     projectId: 'smartpesa-6bb50',
     storageBucket: 'smartpesa-6bb50.firebasestorage.app',
@@ -59,28 +59,29 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyCm1VZf7cCiFr24m-OaYYSvGP3HAy-Ixug',
-    appId: '1:572588099361:ios:934dc82b8ec5777439a060',
+    appId: '1:572588099361:ios:218e17be35c9612339a060',
     messagingSenderId: '572588099361',
     projectId: 'smartpesa-6bb50',
     storageBucket: 'smartpesa-6bb50.firebasestorage.app',
-    iosBundleId: 'com.example.uiFrontend',
+    iosBundleId: 'com.example.smartPesa',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
     apiKey: 'AIzaSyCm1VZf7cCiFr24m-OaYYSvGP3HAy-Ixug',
-    appId: '1:572588099361:ios:934dc82b8ec5777439a060',
+    appId: '1:572588099361:ios:218e17be35c9612339a060',
     messagingSenderId: '572588099361',
     projectId: 'smartpesa-6bb50',
     storageBucket: 'smartpesa-6bb50.firebasestorage.app',
-    iosBundleId: 'com.example.uiFrontend',
+    iosBundleId: 'com.example.smartPesa',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
     apiKey: 'AIzaSyDMmYgPjxr6LvFCTATEuL5oKqtlF_kxgxI',
-    appId: '1:572588099361:web:6f9fea4c133b0cc739a060',
+    appId: '1:572588099361:web:3ff09e19c994d7fe39a060',
     messagingSenderId: '572588099361',
     projectId: 'smartpesa-6bb50',
     authDomain: 'smartpesa-6bb50.firebaseapp.com',
     storageBucket: 'smartpesa-6bb50.firebasestorage.app',
   );
+
 }
