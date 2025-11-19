@@ -13,6 +13,8 @@ dependencies:
   equatable: ^2.0.5
   fl_chart: ^0.60.0
   google_fonts: ^6.0.0
+  go_router: ^7.5.0
+  
 
 dev_dependencies:
   flutter_test:
