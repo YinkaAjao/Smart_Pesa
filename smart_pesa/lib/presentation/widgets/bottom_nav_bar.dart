@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
-import '../../core/constants/app_icons.dart';
 
 class BottomNavBar extends StatelessWidget {
   final void Function(int) onTap;
@@ -15,43 +14,58 @@ class BottomNavBar extends StatelessWidget {
   });
 
   int _locationToIndex(String loc) {
-    if (loc.startsWith('/statistics')) return 1;
+    if (loc.startsWith('/statistics')) return 0;
     if (loc.startsWith('/expenses')) return 2;
-    if (loc.startsWith('/premium')) return 3;
-    return 0;
+    return 1; // home/dashboard
   }
 
   @override
   Widget build(BuildContext context) {
     final index = _locationToIndex(currentLocation);
 
-    return BottomAppBar(
-      shape: const CircularNotchedRectangle(),
-      color: Theme.of(context).colorScheme.surface,
-      notchMargin: 6,
-      child: SizedBox(
-        height: 64,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            IconButton(
-              icon: Icon(AppIcons.wallet, color: index == 0 ? AppColors.primary : Colors.grey),
-              onPressed: () => onTap(0),
-            ),
-            IconButton(
-              icon: Icon(AppIcons.stats, color: index == 1 ? AppColors.primary : Colors.grey),
-              onPressed: () => onTap(1),
-            ),
-            const SizedBox(width: 48), // space for FAB
-            IconButton(
-              icon: Icon(AppIcons.expenses, color: index == 2 ? AppColors.primary : Colors.grey),
-              onPressed: () => onTap(2),
-            ),
-            IconButton(
-              icon: Icon(AppIcons.premium, color: index == 3 ? AppColors.primary : Colors.grey),
-              onPressed: () => onTap(3),
-            ),
-          ],
+    return Container(
+      height: 80,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildNavItem(Icons.bar_chart_rounded, 0, index),
+              _buildNavItem(Icons.home_rounded, 1, index),
+              _buildNavItem(Icons.add_circle_rounded, 2, index),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNavItem(IconData icon, int itemIndex, int currentIndex) {
+    final isSelected = itemIndex == currentIndex;
+
+    return GestureDetector(
+      onTap: () => onTap(itemIndex),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primary : Colors.transparent,
+          borderRadius: BorderRadius.circular(25),
+        ),
+        child: Icon(
+          icon,
+          color: isSelected ? Colors.white : AppColors.textMuted,
+          size: 28,
         ),
       ),
     );
