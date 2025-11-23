@@ -5,16 +5,6 @@ import 'expense_event.dart';
 import 'expense_state.dart';
 
 /// ExpenseBloc - Manages expense state and CRUD operations
-///
-/// Responsibilities:
-/// - Load expenses (all, today, month, by date range)
-/// - Create new expenses
-/// - Update existing expenses
-/// - Delete expenses
-/// - Calculate totals and category summaries
-/// - Stream real-time expense updates
-///
-/// Dependencies injected via constructor (GetIt)
 class ExpenseBloc extends Bloc<ExpenseEvent, ExpenseState> {
   final ExpenseRepository _expenseRepository;
   StreamSubscription? _expenseStreamSubscription;

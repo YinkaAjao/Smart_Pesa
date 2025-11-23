@@ -5,16 +5,6 @@ import 'subscription_event.dart';
 import 'subscription_state.dart';
 
 /// SubscriptionBloc - Manages premium subscription state
-///
-/// Responsibilities:
-/// - Track premium subscription status
-/// - Handle subscription purchases
-/// - Handle subscription cancellations
-/// - Handle purchase restoration
-/// - Manage subscription plans and pricing
-/// - Stream real-time subscription updates
-///
-/// Dependencies injected via constructor (GetIt)
 class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
   final SubscriptionRepository _subscriptionRepository;
   StreamSubscription? _subscriptionStreamSubscription;

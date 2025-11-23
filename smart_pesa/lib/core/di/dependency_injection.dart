@@ -21,14 +21,6 @@ import '../../application/blocs/expense/expense_bloc.dart';
 import '../../application/blocs/subscription/subscription_bloc.dart';
 
 /// Service Locator - Dependency Injection Container
-///
-/// Uses GetIt for managing dependencies across the application.
-/// All dependencies are registered here and can be accessed globally.
-///
-/// Usage:
-/// ```dart
-/// final authBloc = sl<AuthBloc>();
-/// ```
 final sl = GetIt.instance;
 
 /// Initialize all dependencies

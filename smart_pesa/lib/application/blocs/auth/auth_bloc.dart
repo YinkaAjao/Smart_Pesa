@@ -4,16 +4,7 @@ import '../../../domain/repositories/auth_repository.dart';
 import 'auth_event.dart';
 import 'auth_state.dart';
 
-/// AuthBloc - Manages authentication state and business logic
-///
-/// Responsibilities:
-/// - Handle user login/logout
-/// - Handle user registration
-/// - Manage authentication state
-/// - Handle password reset
-/// - Handle profile updates
-///
-/// Dependencies injected via constructor (GetIt)
+
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final AuthRepository _authRepository;
   StreamSubscription? _authStateSubscription;
