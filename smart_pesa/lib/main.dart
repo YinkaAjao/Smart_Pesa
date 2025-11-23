@@ -2,8 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'core/constants/app_colors.dart';
+import 'core/di/dependency_injection.dart';
+import 'application/blocs/auth/auth_bloc.dart';
+import 'application/blocs/auth/auth_event.dart';
+import 'application/blocs/expense/expense_bloc.dart';
+import 'application/blocs/expense/expense_event.dart';
+import 'application/blocs/subscription/subscription_bloc.dart';
+import 'application/blocs/subscription/subscription_event.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/statistics_screen.dart';
 import 'screens/expenses_screen.dart';
@@ -12,9 +20,15 @@ import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Firebase
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  // Initialize dependency injection
+  await initializeDependencies();
+
   runApp(const SmartPesaApp());
 }
 
@@ -92,10 +106,22 @@ class _SmartPesaAppState extends State<SmartPesaApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-      debugShowCheckedModeBanner: false,
-      title: 'Smart-Pesa',
-      theme: ThemeData(
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider<AuthBloc>(
+          create: (context) => sl<AuthBloc>()..add(const AuthCheckRequested()),
+        ),
+        BlocProvider<ExpenseBloc>(
+          create: (context) => sl<ExpenseBloc>()..add(const ExpenseLoadAll()),
+        ),
+        BlocProvider<SubscriptionBloc>(
+          create: (context) => sl<SubscriptionBloc>()..add(const SubscriptionLoadCurrent()),
+        ),
+      ],
+      child: MaterialApp.router(
+        debugShowCheckedModeBanner: false,
+        title: 'Smart-Pesa',
+        theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
           seedColor: AppColors.primary,
@@ -164,8 +190,9 @@ class _SmartPesaAppState extends State<SmartPesaApp> {
         ),
         textTheme: GoogleFonts.poppinsTextTheme(ThemeData(brightness: Brightness.dark).textTheme),
       ),
-      themeMode: ThemeMode.light,
-      routerConfig: _router,
+        themeMode: ThemeMode.light,
+        routerConfig: _router,
+      ),
     );
   }
 }
