@@ -1,10 +1,18 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'premium_event.dart';
 import 'premium_state.dart';
 
-class PremiumCubit extends Cubit<PremiumState> {
-  PremiumCubit() : super(const PremiumState(isPremium: false));
+class PremiumBloc extends Bloc<PremiumEvent, PremiumState> {
+  bool _isSubscribed = false;
 
-  void unlockPremium() {
-    emit(const PremiumState(isPremium: true));
+  PremiumBloc() : super(PremiumInitial()) {
+    on<LoadSubscription>((event, emit) {
+      emit(PremiumLoadSuccess(isSubscribed: _isSubscribed));
+    });
+
+    on<UpgradeSubscription>((event, emit) {
+      _isSubscribed = true;
+      emit(PremiumLoadSuccess(isSubscribed: _isSubscribed));
+    });
   }
 }

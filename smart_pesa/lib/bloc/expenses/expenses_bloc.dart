@@ -1,19 +1,25 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'expenses_state.dart';
+import 'expense_event.dart';
+import 'expense_state.dart';
 
-class ExpensesCubit extends Cubit<ExpensesState> {
-  ExpensesCubit()
-      : super(const ExpensesState(expenses: [
-          {'title': 'Groceries', 'amount': 120.0},
-          {'title': 'Transport', 'amount': 60.0},
-          {'title': 'Subscriptions', 'amount': 30.0},
-          {'title': 'Dining Out', 'amount': 75.0},
-          {'title': 'Entertainment', 'amount': 50.0},
-        ]));
+class ExpenseBloc extends Bloc<ExpenseEvent, ExpenseState> {
+  ExpenseBloc() : super(ExpenseInitial()) {
+    final List<Expense> _expenses = [];
 
-  void addExpense(Map<String, dynamic> expense) {
-    final updated = List<Map<String, dynamic>>.from(state.expenses)
-      ..add(expense);
-    emit(ExpensesState(expenses: updated));
+    on<LoadExpenses>((event, emit) {
+      emit(ExpenseLoadSuccess(List.from(_expenses)));
+    });
+
+    on<AddExpense>((event, emit) {
+      _expenses.add(Expense(title: event.title, amount: event.amount, date: event.date));
+      emit(ExpenseLoadSuccess(List.from(_expenses)));
+    });
+
+    on<DeleteExpense>((event, emit) {
+      if (event.index >= 0 && event.index < _expenses.length) {
+        _expenses.removeAt(event.index);
+      }
+      emit(ExpenseLoadSuccess(List.from(_expenses)));
+    });
   }
 }

@@ -1,20 +1,34 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../expenses/expense_state.dart';
+import '../expenses/expense_bloc.dart';
+import '../expenses/expense_event.dart';
+import 'statistics_event.dart';
 import 'statistics_state.dart';
-import 'package:fl_chart/fl_chart.dart';
 
-class StatisticsCubit extends Cubit<StatisticsState> {
-  StatisticsCubit()
-      : super(const StatisticsState(monthlyExpenses: [
-          FlSpot(0, 1),
-          FlSpot(1, 1.5),
-          FlSpot(2, 1.4),
-          FlSpot(3, 3.4),
-          FlSpot(4, 2),
-          FlSpot(5, 2.2),
-          FlSpot(6, 1.8),
-        ]));
+class StatisticsBloc extends Bloc<StatisticsEvent, StatisticsState> {
+  final ExpenseBloc expenseBloc;
+  late final Stream subscription;
 
-  void updateExpenses(List<FlSpot> newData) {
-    emit(StatisticsState(monthlyExpenses: newData));
+  StatisticsBloc({required this.expenseBloc}) : super(StatisticsInitial()) {
+    subscription = expenseBloc.stream.listen((expenseState) {
+      if (expenseState is ExpenseLoadSuccess) {
+        add(LoadStatistics());
+      }
+    });
+
+    on<LoadStatistics>((event, emit) {
+      if (expenseBloc.state is ExpenseLoadSuccess) {
+        final expenses = (expenseBloc.state as ExpenseLoadSuccess).expenses;
+        final totalExpenses = expenses.fold(0.0, (sum, e) => sum + e.amount);
+        const totalIncome = 3700.0; // static income for now
+        emit(StatisticsLoadSuccess(totalExpenses: totalExpenses, totalIncome: totalIncome));
+      }
+    });
+  }
+
+  @override
+  Future<void> close() {
+    subscription.cancel();
+    return super.close();
   }
 }
