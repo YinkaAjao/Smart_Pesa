@@ -2,10 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'core/constants/app_colors.dart';
-import 'presentation/widgets/bottom_nav_bar.dart';
-import 'presentation/widgets/app_bar_widget.dart';
+import 'core/di/dependency_injection.dart';
+import 'application/blocs/auth/auth_bloc.dart';
+import 'application/blocs/auth/auth_event.dart';
+import 'application/blocs/expense/expense_bloc.dart';
+import 'application/blocs/expense/expense_event.dart';
+import 'application/blocs/subscription/subscription_bloc.dart';
+import 'application/blocs/subscription/subscription_event.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/statistics_screen.dart';
 import 'screens/expenses_screen.dart';
@@ -14,9 +20,15 @@ import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Firebase
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  // Initialize dependency injection
+  await initializeDependencies();
+
   runApp(const SmartPesaApp());
 }
 
@@ -40,34 +52,8 @@ class _SmartPesaAppState extends State<SmartPesaApp> {
         ShellRoute(
           builder: (context, state, child) {
             return Scaffold(
-              appBar: const AppBarWidget(title: 'Smart-Pesa'),
               body: child,
-              floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-              floatingActionButton: FloatingActionButton(
-                onPressed: () => _router.go('/expenses'),
-                backgroundColor: AppColors.primary,
-                child: const Icon(Icons.add),
-              ),
-              bottomNavigationBar: BottomNavBar(
-                currentLocation: state.uri.toString(), // FIX: Use uri instead of location
-                onTap: (index) {
-                  switch (index) {
-                    case 0:
-                      _router.go('/');
-                      break;
-                    case 1:
-                      _router.go('/statistics');
-                      break;
-                    case 2:
-                      _router.go('/expenses');
-                      break;
-                    case 3:
-                      _router.go('/premium');
-                      break;
-                  }
-                },
-                onFabTap: () => _router.go('/expenses'),
-              ),
+              // Bottom navigation is now handled by each individual screen
             );
           },
           routes: [
@@ -120,22 +106,93 @@ class _SmartPesaAppState extends State<SmartPesaApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-      debugShowCheckedModeBanner: false,
-      title: 'Smart-Pesa',
-      theme: ThemeData(
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider<AuthBloc>(
+          create: (context) => sl<AuthBloc>()..add(const AuthCheckRequested()),
+        ),
+        BlocProvider<ExpenseBloc>(
+          create: (context) => sl<ExpenseBloc>()..add(const ExpenseLoadAll()),
+        ),
+        BlocProvider<SubscriptionBloc>(
+          create: (context) => sl<SubscriptionBloc>()..add(const SubscriptionLoadCurrent()),
+        ),
+      ],
+      child: MaterialApp.router(
+        debugShowCheckedModeBanner: false,
+        title: 'Smart-Pesa',
+        theme: ThemeData(
         useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primary, brightness: Brightness.light),
-        textTheme: GoogleFonts.poppinsTextTheme(),
-        appBarTheme: const AppBarTheme(elevation: 0, centerTitle: true),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: AppColors.primary,
+          brightness: Brightness.light,
+          primary: AppColors.primary,
+          secondary: AppColors.accent,
+          surface: AppColors.surface,
+        ),
+        scaffoldBackgroundColor: AppColors.background,
+        textTheme: GoogleFonts.poppinsTextTheme().copyWith(
+          bodyLarge: const TextStyle(color: AppColors.textPrimary),
+          bodyMedium: const TextStyle(color: AppColors.textSecondary),
+        ),
+        appBarTheme: const AppBarTheme(
+          elevation: 0,
+          centerTitle: true,
+          backgroundColor: Colors.transparent,
+        ),
+        cardTheme: CardThemeData(
+          elevation: 0,
+          color: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          shadowColor: Colors.black.withValues(alpha: 0.05),
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.primary,
+            foregroundColor: Colors.white,
+            elevation: 0,
+            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(30),
+            ),
+            textStyle: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: Colors.white,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(color: AppColors.primary, width: 2),
+          ),
+        ),
       ),
       darkTheme: ThemeData(
         useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primary, brightness: Brightness.dark),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: AppColors.primary,
+          brightness: Brightness.dark,
+          primary: AppColors.primary,
+          secondary: AppColors.accent,
+        ),
         textTheme: GoogleFonts.poppinsTextTheme(ThemeData(brightness: Brightness.dark).textTheme),
       ),
-      themeMode: ThemeMode.system,
-      routerConfig: _router,
+        themeMode: ThemeMode.light,
+        routerConfig: _router,
+      ),
     );
   }
 }
