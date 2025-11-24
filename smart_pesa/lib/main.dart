@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -35,7 +35,7 @@ void main() async {
   runApp(const SmartPesaApp());
 }
 
-class SmartPesaApp extends StatefulWidget {
+class SmartPesaApp extends StatelessWidget {
   const SmartPesaApp({super.key});
   @override
   State<SmartPesaApp> createState() => _SmartPesaAppState();
