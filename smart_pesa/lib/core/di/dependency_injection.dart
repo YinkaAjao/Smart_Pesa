@@ -3,22 +3,22 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 // Domain layer
-import '../../domain/repositories/auth_repository.dart';
-import '../../domain/repositories/expense_repository.dart';
-import '../../domain/repositories/subscription_repository.dart';
+import '../../features/auth/domain/repositories/auth_repository.dart';
+import '../../features/expenses/domain/repositories/expense_repository.dart';
+import '../../features/premium/domain/repositories/subscription_repository.dart';
 
 // Data layer (to be implemented)
-import '../../data/repositories/auth_repository_impl.dart';
-import '../../data/repositories/expense_repository_impl.dart';
-import '../../data/repositories/subscription_repository_impl.dart';
-import '../../data/datasources/firebase_auth_datasource.dart';
-import '../../data/datasources/firestore_expense_datasource.dart';
-import '../../data/datasources/firestore_subscription_datasource.dart';
+import '../../features/auth/data/repositories/auth_repository_impl.dart';
+import '../../features/expenses/data/repositories/expense_repository_impl.dart';
+import '../../features/premium/data/repositories/subscription_repository_impl.dart';
+import '../../features/auth/data/datasources/firebase_auth_datasource.dart';
+import '../../features/expenses/data/datasources/firestore_expense_datasource.dart';
+import '../../features/premium/data/datasources/firestore_subscription_datasource.dart';
 
 // Application layer - BLoCs
-import '../../application/blocs/auth/auth_bloc.dart';
-import '../../application/blocs/expense/expense_bloc.dart';
-import '../../application/blocs/subscription/subscription_bloc.dart';
+import '../../features/auth/presentation/bloc/auth_bloc.dart';
+import '../../features/expenses/presentation/bloc/expense_bloc.dart';
+import '../../features/premium/presentation/bloc/subscription_bloc.dart';
 
 /// Service Locator - Dependency Injection Container
 final sl = GetIt.instance;

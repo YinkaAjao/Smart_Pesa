@@ -2,11 +2,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:dartz/dartz.dart';
-import 'package:smart_pesa/application/blocs/expense/expense_bloc.dart';
-import 'package:smart_pesa/application/blocs/expense/expense_event.dart';
-import 'package:smart_pesa/application/blocs/expense/expense_state.dart';
-import 'package:smart_pesa/domain/entities/expense_entity.dart';
-import 'package:smart_pesa/domain/repositories/expense_repository.dart';
+import 'package:smart_pesa/features/expenses/presentation/bloc/expense_bloc.dart';
+import 'package:smart_pesa/features/expenses/presentation/bloc/expense_event.dart';
+import 'package:smart_pesa/features/expenses/presentation/bloc/expense_state.dart';
+import 'package:smart_pesa/features/expenses/domain/entities/expense_entity.dart';
+import 'package:smart_pesa/features/expenses/domain/repositories/expense_repository.dart';
 
 /// Mock ExpenseRepository for testing
 class MockExpenseRepository extends Mock implements ExpenseRepository {}
@@ -23,6 +23,7 @@ void main() {
     description: 'Lunch',
     amount: 15.50,
     currency: 'Rwf',
+    currencySymbol: 'Rwf',
     date: DateTime(2025, 11, 23),
     createdAt: DateTime(2025, 11, 23),
   );
@@ -34,6 +35,7 @@ void main() {
     description: 'Bus ticket',
     amount: 5.00,
     currency: 'Rwf',
+    currencySymbol: 'Rwf',
     date: DateTime(2025, 11, 23),
     createdAt: DateTime(2025, 11, 23),
   );
@@ -118,6 +120,7 @@ void main() {
                 description: any(named: 'description'),
                 amount: any(named: 'amount'),
                 currency: any(named: 'currency'),
+                currencySymbol: 'Rwf',
                 date: any(named: 'date'),
               )).thenAnswer((_) async => Right(testExpense1));
           when(() => mockExpenseRepository.getAllExpenses())
@@ -129,6 +132,7 @@ void main() {
           description: 'Lunch',
           amount: 15.50,
           currency: 'Rwf',
+          currencySymbol: 'Rwf',
           date: DateTime(2025, 11, 23),
         )),
         expect: () => [
@@ -150,6 +154,7 @@ void main() {
                 description: any(named: 'description'),
                 amount: any(named: 'amount'),
                 currency: any(named: 'currency'),
+                currencySymbol: 'Rwf',
                 date: any(named: 'date'),
               )).thenAnswer((_) async => const Left('Failed to create'));
           return expenseBloc;
@@ -159,6 +164,7 @@ void main() {
           description: 'Lunch',
           amount: 15.50,
           currency: 'Rwf',
+          currencySymbol: 'Rwf',
           date: DateTime(2025, 11, 23),
         )),
         expect: () => [
