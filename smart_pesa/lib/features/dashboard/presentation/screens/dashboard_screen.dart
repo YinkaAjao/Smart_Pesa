@@ -92,7 +92,7 @@ class DashboardScreen extends StatelessWidget {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                'Recent Transactions',
+                                'Expenses',
                                 style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
@@ -130,7 +130,7 @@ class DashboardScreen extends StatelessWidget {
                               );
                             }),
                             
-                          const SizedBox(height: 100), // Spacing for FAB
+                          const SizedBox(height: 100), 
                         ],
                       ),
                     ),
@@ -243,7 +243,7 @@ class DashboardScreen extends StatelessWidget {
           Text(
             'Safe to Spend',
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.9), // FIX DEPRECATION
+              color: Colors.white.withValues(alpha: 0.9),
               fontSize: 14, 
               fontWeight: FontWeight.w500,
             ),
@@ -268,7 +268,7 @@ class DashboardScreen extends StatelessWidget {
           Container(
              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
              decoration: BoxDecoration(
-               color: Colors.white.withValues(alpha: 0.2), // FIX DEPRECATION
+               color: Colors.white.withValues(alpha: 0.2),
                borderRadius: BorderRadius.circular(8),
              ),
           )

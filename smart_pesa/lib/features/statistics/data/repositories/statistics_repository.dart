@@ -7,25 +7,31 @@ class StatisticsRepository {
 
   String get _userId => _auth.currentUser?.uid ?? '';
 
-  // Fetch expenses for the current month
   Stream<List<Map<String, dynamic>>> getMonthlyExpenses() {
     if (_userId.isEmpty) return Stream.value([]);
     
     final now = DateTime.now();
-    // First day of current month 
     final startOfMonth = DateTime(now.year, now.month, 1);
-    
-    // Last day of current month )
     final endOfMonth = DateTime(now.year, now.month + 1, 0, 23, 59, 59);
 
     return _firestore.collection('users')
         .doc(_userId)
         .collection('expenses')
-        .where('type', isEqualTo: 'expense')
-        .where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfMonth))
-        .where('date', isLessThanOrEqualTo: Timestamp.fromDate(endOfMonth))
         .orderBy('date', descending: true)
         .snapshots()
-        .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
+        .map((snapshot) {
+          return snapshot.docs
+              .where((doc) {
+                final data = doc.data();
+                if (data['date'] is Timestamp) {
+                  final date = (data['date'] as Timestamp).toDate();
+                  return date.isAfter(startOfMonth.subtract(const Duration(days: 1))) && 
+                         date.isBefore(endOfMonth.add(const Duration(days: 1)));
+                }
+                return false;
+              })
+              .map((doc) => doc.data())
+              .toList();
+        });
   }
 }

@@ -1,26 +1,10 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:equatable/equatable.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../data/repositories/statistics_repository.dart';
-
-class StatisticsState extends Equatable {
-  final double totalSpent;
-  final Map<String, double> categoryBreakdown;
-  final List<FlSpot> dailySpots;
-  final bool isLoading;
-
-  const StatisticsState({
-    this.totalSpent = 0,
-    this.categoryBreakdown = const {},
-    this.dailySpots = const [],
-    this.isLoading = true,
-  });
-
-  @override
-  List<Object> get props => [totalSpent, categoryBreakdown, dailySpots, isLoading];
-}
+import 'statistics_state.dart';
 
 class StatisticsCubit extends Cubit<StatisticsState> {
   final StatisticsRepository _repo = StatisticsRepository();
@@ -31,40 +15,83 @@ class StatisticsCubit extends Cubit<StatisticsState> {
   }
 
   void _loadData() {
-    _sub = _repo.getMonthlyExpenses().listen((expenses) {
-      double total = 0;
-      Map<String, double> categories = {};
-      Map<int, double> dailyMap = {};
+    emit(state.copyWith(isLoading: true));
+    
+    _sub = _repo.getMonthlyExpenses().listen(
+      (expenses) {
+        try {
+          double total = 0;
+          Map<String, double> categories = {};
+          Map<int, double> dailyMap = {};
 
-      for (var e in expenses) {
-        final amount = (e['amount'] as num).toDouble();
-        final cat = e['category'] as String;
-        
-        // Handle Timestamp conversion safely
-        DateTime date;
-        if (e['date'] is Timestamp) {
-          date = (e['date'] as Timestamp).toDate();
-        } else {
-          date = DateTime.now(); // Fallback
+          debugPrint('StatisticsCubit: Processing ${expenses.length} expenses');
+
+          for (var e in expenses) {
+            final amount = (e['amount'] as num).toDouble();
+            final cat = e['category'] as String;
+            
+            DateTime date;
+            if (e['date'] is Timestamp) {
+              date = (e['date'] as Timestamp).toDate();
+            } else {
+              date = DateTime.now();
+            }
+
+            total += amount;
+            categories[cat] = (categories[cat] ?? 0) + amount;
+            
+            // Group by day for the chart
+            final day = date.day;
+            dailyMap[day] = (dailyMap[day] ?? 0) + amount;
+          }
+
+          // Convert to FlSpot for the chart
+          List<FlSpot> monthlyExpenses = dailyMap.entries
+              .map((e) => FlSpot(e.key.toDouble(), e.value))
+              .toList();
+          monthlyExpenses.sort((a, b) => a.x.compareTo(b.x));
+
+          debugPrint('StatisticsCubit: Total spent: $total, Categories: ${categories.keys.toList()}');
+
+          emit(StatisticsState(
+            totalSpent: total,
+            categoryBreakdown: categories,
+            monthlyExpenses: monthlyExpenses,
+            isLoading: false,
+          ));
+        } catch (error, stackTrace) {
+          debugPrint('StatisticsCubit: Error processing expenses - $error');
+          debugPrint('StatisticsCubit: Stack trace - $stackTrace');
+          emit(StatisticsState(
+            totalSpent: 0,
+            categoryBreakdown: {},
+            monthlyExpenses: [],
+            isLoading: false,
+            error: 'Failed to load statistics',
+          ));
         }
+      },
+      onError: (error, stackTrace) {
+        debugPrint('StatisticsCubit: Error in statistics stream - $error');
+        debugPrint('StatisticsCubit: Stack trace - $stackTrace'); 
+        emit(StatisticsState(
+          totalSpent: 0,
+          categoryBreakdown: {},
+          monthlyExpenses: [],
+          isLoading: false,
+          error: 'Failed to load statistics',
+        ));
+      },
+    );
+  }
 
-        total += amount;
-        categories[cat] = (categories[cat] ?? 0) + amount;
-        dailyMap[date.day] = (dailyMap[date.day] ?? 0) + amount;
-      }
+  void changePeriod(String period) {
+    emit(state.copyWith(selectedPeriod: period));
+  }
 
-      List<FlSpot> spots = dailyMap.entries
-          .map((e) => FlSpot(e.key.toDouble(), e.value))
-          .toList();
-      spots.sort((a, b) => a.x.compareTo(b.x));
-
-      emit(StatisticsState(
-        totalSpent: total,
-        categoryBreakdown: categories,
-        dailySpots: spots,
-        isLoading: false,
-      ));
-    });
+  void retry() {
+    _sub?.cancel();
+    _loadData();
   }
 
   @override

@@ -16,7 +16,6 @@ class DashboardRepository {
   Stream<double> getTotalExpenses() {
     if (_userId.isEmpty) return Stream.value(0.0);
     return _firestore.collection('users').doc(_userId).collection('expenses')
-        .where('type', isEqualTo: 'expense')
         .snapshots()
         .map((s) => s.docs.fold(0.0, (total, doc) => total + (doc.data()['amount'] ?? 0.0)));
   }
