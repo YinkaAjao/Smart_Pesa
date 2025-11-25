@@ -20,7 +20,7 @@ class StatisticsRepository {
 
     return _firestore.collection('users')
         .doc(_userId)
-        .collection('transactions')
+        .collection('expenses')
         .where('type', isEqualTo: 'expense')
         .where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfMonth))
         .where('date', isLessThanOrEqualTo: Timestamp.fromDate(endOfMonth))

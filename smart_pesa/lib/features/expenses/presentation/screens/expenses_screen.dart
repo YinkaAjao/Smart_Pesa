@@ -18,11 +18,19 @@ class ExpensesScreen extends StatefulWidget {
 
 class _ExpensesScreenState extends State<ExpensesScreen> {
   String? selectedCategory; 
-
-  // Categories aligned with app logic
+  
   final List<String> categories = [
     'Food', 'Transport', 'Entertainment', 'Travel', 'Bills', 'Other'
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    // Load expenses when screen initializes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<ExpenseBloc>().add(const ExpenseLoadAll());
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,6 +41,11 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
         List<ExpenseEntity> expenses = [];
         if (state is ExpenseLoaded) {
           expenses = state.expenses;
+        } else if (state is ExpenseInitial) {
+          // If initial state, trigger load
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            context.read<ExpenseBloc>().add(const ExpenseLoadAll());
+          });
         }
 
         // Filter logic
@@ -47,11 +60,11 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
           body: SafeArea(
             child: Column(
               children: [
-                _buildHeader(context),
+                buildHeader(context),
                 const SizedBox(height: 16),
                 
                 // Category Filter
-                _buildCategoryFilter(expenses, isDark),
+                buildCategoryFilter(expenses, isDark),
                 
                 const SizedBox(height: 16),
 
@@ -60,15 +73,15 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                   child: state is ExpenseLoading
                       ? const Center(child: CircularProgressIndicator())
                       : filtered.isEmpty
-                          ? _buildEmptyState(isDark)
-                          : _buildExpenseList(filtered, total, isDark),
+                          ? buildEmptyState(isDark)
+                          : buildExpenseList(filtered, total, isDark, context),
                 ),
               ],
             ),
           ),
           // Floating Action Button
           floatingActionButton: FloatingActionButton(
-            onPressed: () => _showAddDialog(context, isDark),
+            onPressed: () => showAddDialog(context, isDark),
             backgroundColor: AppColors.primary,
             child: const Icon(Icons.add, color: Colors.white),
           ),
@@ -77,7 +90,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
+  Widget buildHeader(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       child: Row(
@@ -101,7 +114,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
     );
   }
 
-  Widget _buildCategoryFilter(List<ExpenseEntity> allExpenses, bool isDark) {
+  Widget buildCategoryFilter(List<ExpenseEntity> allExpenses, bool isDark) {
     return SizedBox(
       height: 50,
       child: ListView.builder(
@@ -137,7 +150,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
     );
   }
 
-  Widget _buildExpenseList(List<ExpenseEntity> expenses, double total, bool isDark) {
+  Widget buildExpenseList(List<ExpenseEntity> expenses, double total, bool isDark, BuildContext context) {
     final currentCountry = context.watch<CurrencyCubit>().state;
     return ListView.builder(
       padding: const EdgeInsets.all(16),
@@ -189,8 +202,8 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
             margin: const EdgeInsets.only(bottom: 12),
             child: ListTile(
               leading: CircleAvatar(
-                backgroundColor: _getColorForCategory(expense.category).withAlpha(25),
-                child: Icon(_getIconForCategory(expense.category), color: _getColorForCategory(expense.category)),
+                backgroundColor: getColorForCategory(expense.category).withAlpha(25),
+                child: Icon(getIconForCategory(expense.category), color: getColorForCategory(expense.category)),
               ),
               title: Text(
                 expense.description, 
@@ -220,7 +233,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
     );
   }
 
-  Widget _buildEmptyState(bool isDark) {
+  Widget buildEmptyState(bool isDark) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -238,7 +251,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
     );
   }
 
-  void _showAddDialog(BuildContext context, bool isDark) {
+  void showAddDialog(BuildContext context, bool isDark) {
     final descController = TextEditingController();
     final amountController = TextEditingController();
     String cat = categories.first;
@@ -328,7 +341,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
     );
   }
 
-  Color _getColorForCategory(String cat) {
+  Color getColorForCategory(String cat) {
     switch(cat) {
       case 'Food': return Colors.orange;
       case 'Transport': return Colors.blue;
@@ -339,7 +352,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
     }
   }
 
-  IconData _getIconForCategory(String cat) {
+  IconData getIconForCategory(String cat) {
     switch(cat) {
       case 'Food': return Icons.fastfood;
       case 'Transport': return Icons.directions_bus;
