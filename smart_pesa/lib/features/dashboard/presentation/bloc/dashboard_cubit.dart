@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../data/repositories/dashboard_repository.dart';
 
 class DashboardState extends Equatable {
@@ -52,13 +53,36 @@ class DashboardState extends Equatable {
 
 class DashboardCubit extends Cubit<DashboardState> {
   final DashboardRepository _repository;
+  final FirebaseAuth _auth;
   final List<StreamSubscription> _subs = [];
+  StreamSubscription? _authSubscription;
 
-  DashboardCubit(this._repository) : super(const DashboardState()) {
+  DashboardCubit(this._repository, {FirebaseAuth? auth})
+      : _auth = auth ?? FirebaseAuth.instance,
+        super(const DashboardState()) {
+    _listenToAuthChanges();
     _init();
   }
 
+  void _listenToAuthChanges() {
+    _authSubscription = _auth.authStateChanges().listen((user) {
+      if (user == null) {
+        // User logged out, clear all data
+        _clearData();
+      } else {
+        // User logged in, reinitialize data
+        _reinitialize();
+      }
+    });
+  }
+
   void _init() {
+    // Only initialize if user is logged in
+    if (_auth.currentUser == null) {
+      emit(const DashboardState(isLoading: false));
+      return;
+    }
+
     _subs.add(_repository.getTotalIncome().listen((val) => _recalculate(newIncome: val)));
     _subs.add(_repository.getTotalExpenses().listen((val) => _recalculate(newExpenses: val)));
     _subs.add(_repository.getTotalSavings().listen((val) => _recalculate(newSavings: val)));
@@ -68,6 +92,31 @@ class DashboardCubit extends Cubit<DashboardState> {
     _subs.add(_repository.getRecentTransactions().listen((val) {
       emit(state.copyWith(recentTransactions: val));
     }));
+  }
+
+  void _clearData() {
+    // Cancel all existing subscriptions
+    for (var sub in _subs) {
+      sub.cancel();
+    }
+    _subs.clear();
+
+    // Reset state to initial values
+    emit(const DashboardState(isLoading: false));
+  }
+
+  void _reinitialize() {
+    // Clear existing subscriptions first
+    for (var sub in _subs) {
+      sub.cancel();
+    }
+    _subs.clear();
+
+    // Reset to loading state
+    emit(const DashboardState(isLoading: true));
+
+    // Reinitialize with new user data
+    _init();
   }
 
   void _recalculate({double? newIncome, double? newExpenses, double? newSavings, double? newTaxRate}) {
@@ -87,7 +136,10 @@ class DashboardCubit extends Cubit<DashboardState> {
 
   @override
   Future<void> close() {
-    for (var sub in _subs) {sub.cancel();}
+    _authSubscription?.cancel();
+    for (var sub in _subs) {
+      sub.cancel();
+    }
     return super.close();
   }
 }

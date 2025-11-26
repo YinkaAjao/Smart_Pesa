@@ -1,15 +1,19 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import '../../domain/entities/user_entity.dart';
-import 'package:flutter/foundation.dart' show kIsWeb; // Add this import
-
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 /// Firebase Authentication Data Source
 /// Handles all Firebase Auth operations
 class FirebaseAuthDataSource {
   final FirebaseAuth _firebaseAuth;
+  final GoogleSignIn _googleSignIn;
 
-  FirebaseAuthDataSource({FirebaseAuth? firebaseAuth})
-      : _firebaseAuth = firebaseAuth ?? FirebaseAuth.instance;
+  FirebaseAuthDataSource({
+    FirebaseAuth? firebaseAuth,
+    GoogleSignIn? googleSignIn,
+  }) : _firebaseAuth = firebaseAuth ?? FirebaseAuth.instance,
+       _googleSignIn = googleSignIn ?? GoogleSignIn();
 
   /// Login with email and password
   Future<UserEntity> login({
@@ -29,26 +33,47 @@ class FirebaseAuthDataSource {
   }
 
 
-// Update the Google Sign-In method
-Future<UserEntity> signInWithGoogle() async {
-  try {
-    final GoogleAuthProvider googleProvider = GoogleAuthProvider();
-    
-    if (kIsWeb) {
-      // Web implementation
-      final UserCredential userCredential = 
-          await _firebaseAuth.signInWithPopup(googleProvider);
-      return _userFromFirebase(userCredential.user!);
-    } else {
-      // Mobile implementation - will need google_sign_in package
-      throw Exception('Google Sign-In on mobile requires additional setup. Testing on web for now.');
+  /// Sign in with Google
+  Future<UserEntity> signInWithGoogle() async {
+    try {
+      if (kIsWeb) {
+        // Web implementation
+        final GoogleAuthProvider googleProvider = GoogleAuthProvider();
+        final UserCredential userCredential =
+            await _firebaseAuth.signInWithPopup(googleProvider);
+        return _userFromFirebase(userCredential.user!);
+      } else {
+        // Mobile/Desktop implementation
+        // Trigger the authentication flow
+        final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+
+        if (googleUser == null) {
+          // User canceled the sign-in
+          throw Exception('Google Sign-In was cancelled');
+        }
+
+        // Obtain the auth details from the request
+        final GoogleSignInAuthentication googleAuth =
+            await googleUser.authentication;
+
+        // Create a new credential
+        final credential = GoogleAuthProvider.credential(
+          accessToken: googleAuth.accessToken,
+          idToken: googleAuth.idToken,
+        );
+
+        // Sign in to Firebase with the Google credential
+        final UserCredential userCredential =
+            await _firebaseAuth.signInWithCredential(credential);
+
+        return _userFromFirebase(userCredential.user!);
+      }
+    } on FirebaseAuthException catch (e) {
+      throw _handleAuthException(e);
+    } catch (e) {
+      throw Exception('Google Sign-In failed: $e');
     }
-  } on FirebaseAuthException catch (e) {
-    throw _handleAuthException(e);
-  } catch (e) {
-    throw Exception('Google Sign-In failed: $e');
   }
-}
 
   /// Register new user
   Future<UserEntity> register({
@@ -82,6 +107,10 @@ Future<UserEntity> signInWithGoogle() async {
   /// Logout
   Future<void> logout() async {
     try {
+      // Sign out from Google if user signed in with Google
+      if (!kIsWeb && await _googleSignIn.isSignedIn()) {
+        await _googleSignIn.signOut();
+      }
       await _firebaseAuth.signOut();
     } on FirebaseAuthException catch (e) {
       throw _handleAuthException(e);
