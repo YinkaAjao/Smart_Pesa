@@ -6,22 +6,22 @@ import '../entities/user_entity.dart';
 /// Implementation will be in the data layer
 abstract class AuthRepository {
   /// Login with email and password
-
   Future<Either<String, UserEntity>> login({
     required String email,
     required String password,
   });
 
   /// Register new user with email and password
-
   Future<Either<String, UserEntity>> register({
     required String email,
     required String password,
     String? displayName,
   });
 
-  /// Logout current user
+  /// Sign in with Google
+  Future<Either<String, UserEntity>> signInWithGoogle();
 
+  /// Logout current user
   Future<Either<String, void>> logout();
 
   /// Get currently authenticated user
@@ -44,4 +44,3 @@ abstract class AuthRepository {
   /// Delete user account
   Future<Either<String, void>> deleteAccount();
 }
-

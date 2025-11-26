@@ -44,6 +44,11 @@ class AuthRegisterRequested extends AuthEvent {
   List<Object?> get props => [email, password, displayName];
 }
 
+/// Event when user signs in with Google
+class AuthGoogleSignInRequested extends AuthEvent {
+  const AuthGoogleSignInRequested();
+}
+
 /// Event when user logs out
 class AuthLogoutRequested extends AuthEvent {
   const AuthLogoutRequested();
@@ -87,4 +92,3 @@ class AuthStateChanged extends AuthEvent {
   @override
   List<Object?> get props => [user];
 }
-

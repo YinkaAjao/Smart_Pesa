@@ -213,21 +213,16 @@ class StatisticsScreen extends StatelessWidget {
       );
     }
 
-    // Calculate dynamic bounds
     double maxY = spots.map((e) => e.y).reduce((a, b) => a > b ? a : b);
     double minX = spots.first.x;
     double maxX = spots.last.x;
 
-    // FIX: If we only have 1 point (or very close points), extend the X-axis 
-    // so the chart doesn't collapse into a single dot. 
-    // We try to show at least a week's view (range of 6).
     if (maxX - minX < 6) {
       double center = minX == maxX ? minX : (minX + maxX) / 2;
       minX = center - 3;
       maxX = center + 3;
     }
 
-    // Ensure X doesn't go below 1 (assuming days of month)
     if (minX < 1) {
       double shift = 1 - minX;
       minX += shift;
@@ -244,7 +239,7 @@ class StatisticsScreen extends StatelessWidget {
             return FlLine(
               color: Colors.grey.withAlpha(35),
               strokeWidth: 1,
-              dashArray: [4, 4], // Dashed lines like Figma
+              dashArray: [4, 4],
             );
           },
         ),

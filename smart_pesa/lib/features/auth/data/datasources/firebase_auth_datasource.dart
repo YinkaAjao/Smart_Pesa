@@ -6,8 +6,8 @@ import '../../domain/entities/user_entity.dart';
 class FirebaseAuthDataSource {
   final FirebaseAuth _firebaseAuth;
 
-  FirebaseAuthDataSource({required FirebaseAuth firebaseAuth})
-      : _firebaseAuth = firebaseAuth;
+  FirebaseAuthDataSource({FirebaseAuth? firebaseAuth})
+      : _firebaseAuth = firebaseAuth ?? FirebaseAuth.instance;
 
   /// Login with email and password
   Future<UserEntity> login({
@@ -26,6 +26,24 @@ class FirebaseAuthDataSource {
     }
   }
 
+  /// Google Sign In using Firebase Auth (no external package needed)
+  Future<UserEntity> signInWithGoogle() async {
+    try {
+      // Create a new GoogleAuthProvider instance
+      final GoogleAuthProvider googleProvider = GoogleAuthProvider();
+      
+      // Trigger the authentication flow
+      final UserCredential userCredential = 
+          await _firebaseAuth.signInWithPopup(googleProvider);
+      
+      return _userFromFirebase(userCredential.user!);
+    } on FirebaseAuthException catch (e) {
+      throw _handleAuthException(e);
+    } catch (e) {
+      throw Exception('Google Sign-In failed: $e');
+    }
+  }
+
   /// Register new user
   Future<UserEntity> register({
     required String email,
@@ -33,8 +51,7 @@ class FirebaseAuthDataSource {
     String? displayName,
   }) async {
     try {
-      final userCredential =
-          await _firebaseAuth.createUserWithEmailAndPassword(
+      final userCredential = await _firebaseAuth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
@@ -42,6 +59,12 @@ class FirebaseAuthDataSource {
       // Update display name if provided
       if (displayName != null) {
         await userCredential.user!.updateDisplayName(displayName);
+        // Reload user to get updated profile
+        await userCredential.user!.reload();
+        final updatedUser = _firebaseAuth.currentUser;
+        if (updatedUser != null) {
+          return _userFromFirebase(updatedUser);
+        }
       }
 
       return _userFromFirebase(userCredential.user!);
@@ -52,7 +75,11 @@ class FirebaseAuthDataSource {
 
   /// Logout
   Future<void> logout() async {
-    await _firebaseAuth.signOut();
+    try {
+      await _firebaseAuth.signOut();
+    } on FirebaseAuthException catch (e) {
+      throw _handleAuthException(e);
+    }
   }
 
   /// Get current user
@@ -129,7 +156,7 @@ class FirebaseAuthDataSource {
     );
   }
 
-  /// Handle Firebase Auth exceptions
+  /// Handle Firebase Auth exceptions and convert to user-friendly messages
   String _handleAuthException(FirebaseAuthException e) {
     switch (e.code) {
       case 'user-not-found':
@@ -146,9 +173,12 @@ class FirebaseAuthDataSource {
         return 'This user account has been disabled.';
       case 'too-many-requests':
         return 'Too many requests. Please try again later.';
+      case 'operation-not-allowed':
+        return 'This sign-in method is not enabled.';
+      case 'network-request-failed':
+        return 'Network error. Please check your connection.';
       default:
         return 'Authentication error: ${e.message}';
     }
   }
 }
-

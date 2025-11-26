@@ -4,7 +4,6 @@ import '../../domain/repositories/auth_repository.dart';
 import 'auth_event.dart';
 import 'auth_state.dart';
 
-
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final AuthRepository _authRepository;
   StreamSubscription? _authStateSubscription;
@@ -16,6 +15,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<AuthCheckRequested>(_onAuthCheckRequested);
     on<AuthLoginRequested>(_onLoginRequested);
     on<AuthRegisterRequested>(_onRegisterRequested);
+    on<AuthGoogleSignInRequested>(_onGoogleSignInRequested);
     on<AuthLogoutRequested>(_onLogoutRequested);
     on<AuthPasswordResetRequested>(_onPasswordResetRequested);
     on<AuthProfileUpdateRequested>(_onProfileUpdateRequested);
@@ -80,6 +80,23 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       password: event.password,
       displayName: event.displayName,
     );
+
+    result.fold(
+      // Error case
+      (error) => emit(AuthError(message: error)),
+      // Success case
+      (user) => emit(AuthAuthenticated(user: user)),
+    );
+  }
+
+  /// Handle Google sign-in request
+  Future<void> _onGoogleSignInRequested(
+    AuthGoogleSignInRequested event,
+    Emitter<AuthState> emit,
+  ) async {
+    emit(const AuthLoading());
+
+    final result = await _authRepository.signInWithGoogle();
 
     result.fold(
       // Error case
@@ -178,4 +195,3 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     return super.close();
   }
 }
-

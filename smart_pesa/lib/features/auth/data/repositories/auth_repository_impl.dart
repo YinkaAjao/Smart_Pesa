@@ -46,6 +46,16 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<Either<String, UserEntity>> signInWithGoogle() async {
+    try {
+      final user = await _authDataSource.signInWithGoogle();
+      return Right(user);
+    } catch (e) {
+      return Left(e.toString());
+    }
+  }
+
+  @override
   Future<Either<String, void>> logout() async {
     try {
       await _authDataSource.logout();
@@ -105,4 +115,3 @@ class AuthRepositoryImpl implements AuthRepository {
     }
   }
 }
-
