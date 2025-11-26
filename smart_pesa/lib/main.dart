@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -11,7 +12,6 @@ import 'core/di/dependency_injection.dart';
 import 'core/theme/theme_cubit.dart';
 import 'firebase_options.dart';
 
-// Import Screens & Blocs
 import 'features/auth/presentation/screens/auth_screen.dart';
 import 'features/dashboard/presentation/screens/dashboard_screen.dart';
 import 'features/dashboard/presentation/bloc/dashboard_cubit.dart';
@@ -25,7 +25,7 @@ import 'features/expenses/data/repositories/expense_repository_impl.dart';
 import 'features/premium/presentation/screens/premium_screen.dart';
 import 'features/profile/presentation/screens/profile_screen.dart';
 import 'features/auth/presentation/bloc/auth_bloc.dart';
-import 'features/auth/presentation/bloc/auth_event.dart';
+import 'features/auth/presentation/bloc/auth_state.dart';
 import 'features/settings/presentation/cubit/currency_cubit.dart';
 
 void main() async {
@@ -33,6 +33,23 @@ void main() async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await initializeDependencies();
   runApp(const SmartPesaApp());
+}
+
+class GoRouterRefreshStream extends ChangeNotifier {
+  GoRouterRefreshStream(Stream<dynamic> stream) {
+    notifyListeners();
+    _subscription = stream.asBroadcastStream().listen(
+          (dynamic _) => notifyListeners(),
+        );
+  }
+
+  late final StreamSubscription<dynamic> _subscription;
+
+  @override
+  void dispose() {
+    _subscription.cancel();
+    super.dispose();
+  }
 }
 
 class SmartPesaApp extends StatefulWidget {
@@ -43,87 +60,102 @@ class SmartPesaApp extends StatefulWidget {
 
 class _SmartPesaAppState extends State<SmartPesaApp> {
   late final GoRouter _router;
+  late final AuthBloc _authBloc;
 
   @override
   void initState() {
     super.initState();
+    _authBloc = sl<AuthBloc>();
+    
     _router = GoRouter(
       initialLocation: '/',
+      refreshListenable: GoRouterRefreshStream(_authBloc.stream),
       redirect: (context, state) {
-        final loggedIn = FirebaseAuth.instance.currentUser != null;
-        final loggingIn = state.uri.toString() == '/auth';
-        if (!loggedIn && !loggingIn) return '/auth';
-        if (loggedIn && loggingIn) return '/';
+        final authState = _authBloc.state;
+        final isAuthRoute = state.uri.toString() == '/auth';
+        
+        if (authState is AuthAuthenticated && isAuthRoute) {
+          return '/';
+        }
+        
+        if ((authState is AuthUnauthenticated || authState is AuthInitial) && !isAuthRoute) {
+          return '/auth';
+        }
+        
         return null;
       },
       routes: [
         GoRoute(path: '/auth', builder: (context, state) => const AuthScreen()),
         
-        // SHELL ROUTE HANDLES GLOBAL NAV & DRAWER
         ShellRoute(
           builder: (context, state, child) {
-            return Scaffold(
-              // GLOBAL DRAWER
-              drawer: Drawer(
-                child: Column(
-                  children: [
-                    DrawerHeader(
-                      decoration: const BoxDecoration(gradient: AppColors.primaryGradient),
-                      child: Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.account_balance_wallet, size: 50, color: Colors.white),
-                            const SizedBox(height: 10),
-                            Text("Smart-Pesa", style: GoogleFonts.poppins(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
-                          ],
+            return BlocListener<AuthBloc, AuthState>(
+              listener: (context, state) {
+                if (state is AuthUnauthenticated) {
+                  context.go('/auth');
+                }
+              },
+              child: Scaffold(
+                drawer: Drawer(
+                  child: Column(
+                    children: [
+                      DrawerHeader(
+                        decoration: const BoxDecoration(gradient: AppColors.primaryGradient),
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.account_balance_wallet, size: 50, color: Colors.white),
+                              const SizedBox(height: 10),
+                              Text("Smart-Pesa", style: GoogleFonts.poppins(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                    _buildDrawerItem(context, 'Dashboard', Icons.home, '/'),
-                    _buildDrawerItem(context, 'Statistics', Icons.bar_chart, '/statistics'),
-                    _buildDrawerItem(context, 'Expenses', Icons.attach_money, '/expenses'),
-                    _buildDrawerItem(context, 'Profile', Icons.person, '/profile'),
-                    const Divider(),
-                    
-                    // Dark Mode Toggle
-                    BlocBuilder<ThemeCubit, ThemeMode>(
-                      builder: (context, mode) {
-                        final isDark = mode == ThemeMode.dark;
-                        return SwitchListTile(
-                          title: const Text("Dark Mode"),
-                          secondary: Icon(isDark ? Icons.dark_mode : Icons.light_mode),
-                          value: isDark,
-                          onChanged: (value) {
-                            context.read<ThemeCubit>().toggleTheme(value);
-                          },
-                        );
-                      },
-                    ),
+                      _buildDrawerItem(context, 'Dashboard', Icons.home, '/'),
+                      _buildDrawerItem(context, 'Statistics', Icons.bar_chart, '/statistics'),
+                      _buildDrawerItem(context, 'Expenses', Icons.attach_money, '/expenses'),
+                      _buildDrawerItem(context, 'Profile', Icons.person, '/profile'),
+                      const Divider(),
+                      
+                      BlocBuilder<ThemeCubit, ThemeMode>(
+                        builder: (context, mode) {
+                          final isDark = mode == ThemeMode.dark;
+                          return SwitchListTile(
+                            title: const Text("Dark Mode"),
+                            secondary: Icon(isDark ? Icons.dark_mode : Icons.light_mode),
+                            value: isDark,
+                            onChanged: (value) {
+                              context.read<ThemeCubit>().toggleTheme(value);
+                            },
+                          );
+                        },
+                      ),
 
-                    const Spacer(),
-                    ListTile(
-                      title: const Text('Sign Out', style: TextStyle(color: Colors.red)),
-                      leading: const Icon(Icons.exit_to_app, color: Colors.red),
-                      onTap: () {
-                        FirebaseAuth.instance.signOut();
-                        Navigator.pop(context); // Close drawer
-                        context.go('/auth');
-                      },
-                    ),
-                    const SizedBox(height: 20),
+                      const Spacer(),
+                      ListTile(
+                        title: const Text('Sign Out', style: TextStyle(color: Colors.red)),
+                        leading: const Icon(Icons.exit_to_app, color: Colors.red),
+                        onTap: () {
+                          FirebaseAuth.instance.signOut();
+                          Navigator.pop(context);
+                          context.go('/auth');
+                        },
+                      ),
+                      const SizedBox(height: 20),
+                    ],
+                  ),
+                ),
+                body: child,
+                bottomNavigationBar: BottomNavigationBar(
+                  currentIndex: _getIndex(state),
+                  onTap: (i) => _onTap(context, i),
+                  items: const [
+                    BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: 'Home'),
+                    BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: 'Stats'),
+                    BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
                   ],
                 ),
-              ),
-              body: child,
-              bottomNavigationBar: BottomNavigationBar(
-                currentIndex: _getIndex(state),
-                onTap: (i) => _onTap(context, i),
-                items: const [
-                  BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: 'Home'),
-                  BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: 'Stats'),
-                  BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
-                ],
               ),
             );
           },
@@ -139,14 +171,13 @@ class _SmartPesaAppState extends State<SmartPesaApp> {
     );
   }
 
-  // Helper to build drawer items and close drawer on tap
   Widget _buildDrawerItem(BuildContext context, String title, IconData icon, String route) {
     return ListTile(
       leading: Icon(icon),
       title: Text(title),
       onTap: () {
-        Navigator.pop(context); // <--- CLOSE DRAWER
-        context.go(route);      // <--- NAVIGATE
+        Navigator.pop(context);
+        context.go(route);
       },
     );
   }
@@ -168,7 +199,7 @@ class _SmartPesaAppState extends State<SmartPesaApp> {
     return MultiBlocProvider(
       providers: [
         BlocProvider(create: (_) => ThemeCubit()), 
-        BlocProvider(create: (_) => sl<AuthBloc>()..add(const AuthCheckRequested())),
+        BlocProvider.value(value: _authBloc),
         BlocProvider(create: (_) => DashboardCubit(DashboardRepository())),
         BlocProvider(create: (_) => CurrencyCubit()),
         BlocProvider(create: (_) {
@@ -181,8 +212,7 @@ class _SmartPesaAppState extends State<SmartPesaApp> {
           return MaterialApp.router(
             debugShowCheckedModeBanner: false,
             title: 'Smart-Pesa',
-            themeMode: themeMode, 
-            // Light Theme
+            themeMode: themeMode,
             theme: ThemeData(
               useMaterial3: true,
               brightness: Brightness.light,
@@ -191,7 +221,6 @@ class _SmartPesaAppState extends State<SmartPesaApp> {
               textTheme: GoogleFonts.poppinsTextTheme(),
               appBarTheme: const AppBarTheme(backgroundColor: Colors.white, elevation: 0, iconTheme: IconThemeData(color: Colors.black)),
             ),
-            // Dark Theme
             darkTheme: ThemeData(
               useMaterial3: true,
               brightness: Brightness.dark,

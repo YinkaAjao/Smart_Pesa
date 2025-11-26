@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import '../bloc/auth_bloc.dart';
 import '../bloc/auth_event.dart';
 import '../bloc/auth_state.dart';
@@ -18,8 +19,8 @@ class _AuthScreenState extends State<AuthScreen> {
   bool _isLogin = true;
   bool _showPasswordResetDialog = false;
   String? _passwordResetEmail;
+  bool _isRedirecting = false;
 
-  /// Validate email format
   String? _validateEmail(String? value) {
     if (value == null || value.isEmpty) {
       return 'Please enter your email';
@@ -31,7 +32,6 @@ class _AuthScreenState extends State<AuthScreen> {
     return null;
   }
 
-  /// Validate password strength
   String? _validatePassword(String? value) {
     if (value == null || value.isEmpty) {
       return 'Please enter your password';
@@ -42,7 +42,6 @@ class _AuthScreenState extends State<AuthScreen> {
     return null;
   }
 
-  /// Handle form submission for login/signup
   void _submit() {
     if (!_formKey.currentState!.validate()) return;
 
@@ -59,12 +58,10 @@ class _AuthScreenState extends State<AuthScreen> {
     }
   }
 
-  /// Handle Google sign-in
   void _googleSignIn() {
     context.read<AuthBloc>().add(AuthGoogleSignInRequested());
   }
 
-  /// Handle password reset
   void _resetPassword() {
     if (_passwordResetEmail == null || _passwordResetEmail!.isEmpty) {
       _showError('Please enter your email address');
@@ -81,7 +78,6 @@ class _AuthScreenState extends State<AuthScreen> {
     setState(() => _showPasswordResetDialog = false);
   }
 
-  /// Show error message snackbar
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -92,7 +88,6 @@ class _AuthScreenState extends State<AuthScreen> {
     );
   }
 
-  /// Show success message snackbar
   void _showSuccess(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -101,6 +96,15 @@ class _AuthScreenState extends State<AuthScreen> {
         behavior: SnackBarBehavior.floating,
       ),
     );
+  }
+
+  void _redirectToDashboard() {
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (mounted) {
+        _isRedirecting = false;
+        GoRouter.of(context).go('/');
+      }
+    });
   }
 
   @override
@@ -113,6 +117,9 @@ class _AuthScreenState extends State<AuthScreen> {
           _showError(state.message);
         } else if (state is AuthPasswordResetSent) {
           _showSuccess('Password reset email sent to ${state.email}');
+        } else if (state is AuthAuthenticated && !_isRedirecting) {
+          _isRedirecting = true;
+          _redirectToDashboard();
         }
       },
       child: Scaffold(
@@ -126,7 +133,6 @@ class _AuthScreenState extends State<AuthScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // App logo/icon
                       Icon(
                         Icons.account_balance_wallet,
                         size: 64,
@@ -134,7 +140,6 @@ class _AuthScreenState extends State<AuthScreen> {
                       ),
                       const SizedBox(height: 24),
                       
-                      // Title
                       Text(
                         _isLogin ? "Welcome Back" : "Create Account",
                         style: TextStyle(
@@ -145,7 +150,6 @@ class _AuthScreenState extends State<AuthScreen> {
                       ),
                       const SizedBox(height: 8),
                       
-                      // Subtitle
                       Text(
                         _isLogin 
                           ? "Sign in to continue" 
@@ -156,7 +160,6 @@ class _AuthScreenState extends State<AuthScreen> {
                       ),
                       const SizedBox(height: 40),
                       
-                      // Form
                       Form(
                         key: _formKey,
                         child: Column(
@@ -180,7 +183,6 @@ class _AuthScreenState extends State<AuthScreen> {
                       ),
                       const SizedBox(height: 16),
 
-                      // Password reset link (only visible in login mode)
                       if (_isLogin) ...[
                         Align(
                           alignment: Alignment.centerRight,
@@ -198,14 +200,12 @@ class _AuthScreenState extends State<AuthScreen> {
                         const SizedBox(height: 8),
                       ],
 
-                      // Loading indicator or action buttons
                       BlocBuilder<AuthBloc, AuthState>(
                         builder: (context, state) {
                           final isLoading = state is AuthLoading;
                           
                           return Column(
                             children: [
-                              // Primary action button
                               SizedBox(
                                 width: double.infinity,
                                 height: 56,
@@ -240,7 +240,6 @@ class _AuthScreenState extends State<AuthScreen> {
                               const SizedBox(height: 16),
                               
                               if (!isLoading) ...[
-                                // Divider
                                 Row(
                                   children: [
                                     Expanded(
@@ -262,7 +261,6 @@ class _AuthScreenState extends State<AuthScreen> {
                                 ),
                                 const SizedBox(height: 16),
                                 
-                                // Google sign-in button
                                 _buildSocialButton(
                                   "Sign in with Google",
                                   Icons.g_mobiledata,
@@ -276,7 +274,6 @@ class _AuthScreenState extends State<AuthScreen> {
 
                       const SizedBox(height: 24),
                       
-                      // Toggle between login and signup
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -307,7 +304,6 @@ class _AuthScreenState extends State<AuthScreen> {
               ),
             ),
 
-            // Password reset dialog
             if (_showPasswordResetDialog) ...[
               BackdropFilter(
                 filter: const ColorFilter.mode(Colors.black26, BlendMode.darken),
@@ -379,7 +375,6 @@ class _AuthScreenState extends State<AuthScreen> {
     );
   }
 
-  /// Build text field with validation and styling
   Widget _buildTextField({
     required TextEditingController controller,
     required String hint,
@@ -411,11 +406,11 @@ class _AuthScreenState extends State<AuthScreen> {
                 : null,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(color: colorScheme.outline.withOpacity(0.3)),
+              borderSide: BorderSide(color: colorScheme.outline.withAlpha(77)),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(color: colorScheme.outline.withOpacity(0.3)),
+              borderSide: BorderSide(color: colorScheme.outline.withAlpha(77)),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
@@ -434,7 +429,6 @@ class _AuthScreenState extends State<AuthScreen> {
     );
   }
 
-  /// Build social sign-in button
   Widget _buildSocialButton(String text, IconData icon, VoidCallback onTap) {
     final colorScheme = Theme.of(context).colorScheme;
     
@@ -451,7 +445,7 @@ class _AuthScreenState extends State<AuthScreen> {
         style: OutlinedButton.styleFrom(
           foregroundColor: colorScheme.onSurface,
           backgroundColor: colorScheme.surface,
-          side: BorderSide(color: colorScheme.outline.withOpacity(0.3)),
+          side: BorderSide(color: colorScheme.outline.withAlpha(77)),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         ),
       ),

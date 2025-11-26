@@ -11,7 +11,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   AuthBloc({required AuthRepository authRepository})
       : _authRepository = authRepository,
         super(const AuthInitial()) {
-    // Register event handlers
     on<AuthCheckRequested>(_onAuthCheckRequested);
     on<AuthLoginRequested>(_onLoginRequested);
     on<AuthRegisterRequested>(_onRegisterRequested);
@@ -22,7 +21,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<AuthDeleteAccountRequested>(_onDeleteAccountRequested);
     on<AuthStateChanged>(_onAuthStateChanged);
 
-    // Listen to authentication state changes
     _authStateSubscription = _authRepository.authStateChanges.listen((user) {
       if (user != null) {
         add(AuthStateChanged(user: user));
@@ -32,7 +30,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     });
   }
 
-  /// Handle initial authentication check
   Future<void> _onAuthCheckRequested(
     AuthCheckRequested event,
     Emitter<AuthState> emit,
@@ -48,7 +45,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     }
   }
 
-  /// Handle login request
   Future<void> _onLoginRequested(
     AuthLoginRequested event,
     Emitter<AuthState> emit,
@@ -61,14 +57,11 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     );
 
     result.fold(
-      // Error case
       (error) => emit(AuthError(message: error)),
-      // Success case
-      (user) => emit(AuthAuthenticated(user: user)),
+      (user) {},
     );
   }
 
-  /// Handle registration request
   Future<void> _onRegisterRequested(
     AuthRegisterRequested event,
     Emitter<AuthState> emit,
@@ -82,14 +75,11 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     );
 
     result.fold(
-      // Error case
       (error) => emit(AuthError(message: error)),
-      // Success case
-      (user) => emit(AuthAuthenticated(user: user)),
+      (user) {},
     );
   }
 
-  /// Handle Google sign-in request
   Future<void> _onGoogleSignInRequested(
     AuthGoogleSignInRequested event,
     Emitter<AuthState> emit,
@@ -99,14 +89,11 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     final result = await _authRepository.signInWithGoogle();
 
     result.fold(
-      // Error case
       (error) => emit(AuthError(message: error)),
-      // Success case
-      (user) => emit(AuthAuthenticated(user: user)),
+      (user) {},
     );
   }
 
-  /// Handle logout request
   Future<void> _onLogoutRequested(
     AuthLogoutRequested event,
     Emitter<AuthState> emit,
@@ -116,14 +103,11 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     final result = await _authRepository.logout();
 
     result.fold(
-      // Error case
       (error) => emit(AuthError(message: error)),
-      // Success case
       (_) => emit(const AuthUnauthenticated()),
     );
   }
 
-  /// Handle password reset request
   Future<void> _onPasswordResetRequested(
     AuthPasswordResetRequested event,
     Emitter<AuthState> emit,
@@ -133,14 +117,11 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     final result = await _authRepository.resetPassword(email: event.email);
 
     result.fold(
-      // Error case
       (error) => emit(AuthError(message: error)),
-      // Success case
       (_) => emit(AuthPasswordResetSent(email: event.email)),
     );
   }
 
-  /// Handle profile update request
   Future<void> _onProfileUpdateRequested(
     AuthProfileUpdateRequested event,
     Emitter<AuthState> emit,
@@ -153,14 +134,11 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     );
 
     result.fold(
-      // Error case
       (error) => emit(AuthError(message: error)),
-      // Success case
       (user) => emit(AuthProfileUpdated(user: user)),
     );
   }
 
-  /// Handle account deletion request
   Future<void> _onDeleteAccountRequested(
     AuthDeleteAccountRequested event,
     Emitter<AuthState> emit,
@@ -170,14 +148,11 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     final result = await _authRepository.deleteAccount();
 
     result.fold(
-      // Error case
       (error) => emit(AuthError(message: error)),
-      // Success case
       (_) => emit(const AuthUnauthenticated()),
     );
   }
 
-  /// Handle internal auth state changes from Firebase stream
   void _onAuthStateChanged(
     AuthStateChanged event,
     Emitter<AuthState> emit,

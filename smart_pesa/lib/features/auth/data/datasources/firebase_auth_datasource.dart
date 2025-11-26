@@ -1,5 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../domain/entities/user_entity.dart';
+import 'package:flutter/foundation.dart' show kIsWeb; // Add this import
+
 
 /// Firebase Authentication Data Source
 /// Handles all Firebase Auth operations
@@ -26,23 +28,27 @@ class FirebaseAuthDataSource {
     }
   }
 
-  /// Google Sign In using Firebase Auth (no external package needed)
-  Future<UserEntity> signInWithGoogle() async {
-    try {
-      // Create a new GoogleAuthProvider instance
-      final GoogleAuthProvider googleProvider = GoogleAuthProvider();
-      
-      // Trigger the authentication flow
+
+// Update the Google Sign-In method
+Future<UserEntity> signInWithGoogle() async {
+  try {
+    final GoogleAuthProvider googleProvider = GoogleAuthProvider();
+    
+    if (kIsWeb) {
+      // Web implementation
       final UserCredential userCredential = 
           await _firebaseAuth.signInWithPopup(googleProvider);
-      
       return _userFromFirebase(userCredential.user!);
-    } on FirebaseAuthException catch (e) {
-      throw _handleAuthException(e);
-    } catch (e) {
-      throw Exception('Google Sign-In failed: $e');
+    } else {
+      // Mobile implementation - will need google_sign_in package
+      throw Exception('Google Sign-In on mobile requires additional setup. Testing on web for now.');
     }
+  } on FirebaseAuthException catch (e) {
+    throw _handleAuthException(e);
+  } catch (e) {
+    throw Exception('Google Sign-In failed: $e');
   }
+}
 
   /// Register new user
   Future<UserEntity> register({
